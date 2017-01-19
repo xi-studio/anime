@@ -54,7 +54,7 @@ def miditomatrix(dataset):
 
 
 if __name__=="__main__":
-    res = miditomatrix('../data_set/*.mid')
+    res = miditomatrix('../data/data_set/*.mid')
     with gzip.open('../data/400scale_seq.pkl.gz','wb') as f:
         cPickle.dump(res,f)
         print "save res"
