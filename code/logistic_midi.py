@@ -189,34 +189,15 @@ def load_data(dataset):
     #############
 
     # Download the MNIST dataset if it is not present
-    data_dir, data_file = os.path.split(dataset)
-    if data_dir == "" and not os.path.isfile(dataset):
-        # Check if dataset is in the data directory.
-        new_path = os.path.join(
-            os.path.split(__file__)[0],
-            "..",
-            "data",
-            dataset
-        )
-        if os.path.isfile(new_path) or data_file == 'mnist.pkl.gz':
-            dataset = new_path
-
-    if (not os.path.isfile(dataset)) and data_file == 'mnist.pkl.gz':
-        from six.moves import urllib
-        origin = (
-            'http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz'
-        )
-        print('Downloading data from %s' % origin)
-        urllib.request.urlretrieve(origin, dataset)
 
     print('... loading data')
 
     # Load the dataset
     with gzip.open(dataset, 'rb') as f:
         try:
-            train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
+            data_set = pickle.load(f, encoding='latin1')
         except:
-            train_set, valid_set, test_set = pickle.load(f)
+            data_set = pickle.load(f)
     # train_set, valid_set, test_set format: tuple(input, target)
     # input is a numpy.ndarray of 2 dimensions (a matrix)
     # where each row corresponds to an example. target is a
@@ -250,19 +231,25 @@ def load_data(dataset):
         # lets ous get around this issue
         return shared_x, T.cast(shared_y, 'int32')
     
-    num = 100
-
+    x_set = data_set[0]
+    y_set = data_set[1]
+    
+    num = int(np.floor(x_set.shape[0]*0.6))
+    train_set = (x_set[:num],y_set[:num]) 
+    test_set = (x_set[num:],y_set[num:])
+    valid_set = test_set
+    
     test_set_x, test_set_y = shared_dataset(test_set)
     valid_set_x, valid_set_y = shared_dataset(valid_set)
-    train_set_x, train_set_y = shared_dataset((train_set[0][:num],train_set[1][:num]))
+    train_set_x, train_set_y = shared_dataset(train_set)
 
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y),
             (test_set_x, test_set_y)]
     return rval
 
 
-def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
-                           dataset='../data/mnist.pkl.gz',
+def sgd_optimization_mnist(learning_rate=0.03, n_epochs=1000,
+                           dataset='../data/400scale_data.pkl.gz',
                            batch_size=10):
     """
     Demonstrate stochastic gradient descent optimization of a log-linear
@@ -308,7 +295,7 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
 
     # construct the logistic regression class
     # Each MNIST image has size 28*28
-    classifier = LogisticRegression(input=x, n_in=28 * 28, n_out=10)
+    classifier = LogisticRegression(input=x, n_in=400*88, n_out=9)
 
     # the cost we minimize during training is the negative log likelihood of
     # the model in symbolic format
@@ -389,14 +376,6 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
 
             minibatch_avg_cost = train_model(minibatch_index)
              
-           # if len(base)<1000:
-           #     new = classifier.W.get_value()
-           #     base.append(new[:,0] - m)
-           #     m = new[:,0]
-           # 
-           # if len(base)==1000:
-           #     np.save('base.npy',np.array(base))
-           #     break
             # iteration number
             iter = (epoch - 1) * n_train_batches + minibatch_index
 
