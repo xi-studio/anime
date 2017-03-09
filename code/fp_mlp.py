@@ -7,6 +7,7 @@ import gzip
 import pickle
 
 import numpy
+import numpy as np
 import cPickle
 
 import theano
@@ -115,9 +116,7 @@ class MLP(object):
         self.output = self.layer0.fp_output
 
 
-def main(dataset='../data/mnist.pkl.gz', batch_size=20, n_epochs=10):
-
-
+def main(dataset='../data/mnist.pkl.gz', batch_size=1, n_epochs=10):
     datasets = load_data(dataset)
 
     train_set_x, train_set_y = datasets[0]
@@ -158,7 +157,7 @@ def main(dataset='../data/mnist.pkl.gz', batch_size=20, n_epochs=10):
         epoch = epoch + 1
         for minibatch_index in range(n_train_batches):
             res = test_model(minibatch_index)
-            print(res)
+            print(np.sum(res))
 
     
 if __name__ == '__main__':
