@@ -23,6 +23,10 @@ def getdata():
     data = (x,y)
     return data    
 
+def search_act():
+
+def act_sum():
+
 
 if __name__=='__main__':
     head[:8] = np.arange(8)
