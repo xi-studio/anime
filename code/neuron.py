@@ -1,13 +1,22 @@
 import numpy as np
 
-NEURON_NUM = 20
-W_MAX_NUM  = 50 
-
-head   = np.zeros((W_MAX_NUM, NEURON_NUM)) 
-tail   = np.zeros((W_MAX_NUM, NEURON_NUM)) 
-w      = np.zeros(W_MAX_NUM) 
-nvalue = np.zeros(NEURON_NUM)
-ntype  = np.ones(NEURON_NUM) 
+class network(object):
+  
+    def __init__(self):
+        NEURON_NUM = 1000
+        W_MAX_NUM  = 2000 
+            
+        self.head    = np.zeros((W_MAX_NUM, NEURON_NUM),dtype=np.int8)
+        self.tail    = np.zeros((W_MAX_NUM, NEURON_NUM),dtype=np.int8) 
+        self.w       = np.zeros(W_MAX_NUM,dtype=np.float32) 
+        self.nvalue  = np.zeros(NEURON_NUM,dtype=np.float32)
+        self.nsymbol = np.ones(NEURON_NUM,dtype=np.int8) 
+            
+        
+    def step(self):
+        res = np.dot(np.dot(self.head,self.nvalue * self.nsymbol) * self.w, self.tail)
+        res = res * (res>=0)
+        print np.sum(res)
         
     
 def getdata():
@@ -18,12 +27,9 @@ def getdata():
     data = (x,y)
     return data    
 
-
-def onestep():
-    res = np.dot(np.dot(head,nvalue * ntype) * w, tail)
-    nvalue = res * (res>=0)
-    
-
 if __name__=='__main__':
+    n = network()
+    for x in range(100):
+        n.step()
 
 
