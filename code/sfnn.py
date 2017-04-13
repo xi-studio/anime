@@ -6,17 +6,13 @@ class network(object):
             
         self.w = csc_matrix((nnum,nnum),dtype=np.float32) 
         self.b = np.zeros(nnum,dtype=np.float32)
-	self.m = np.zeros(nnum,dtype=np.float32)
         self.v = np.zeros(nnum,dtype=np.float32)
-
-	self.f = 0.5
     
     def step(self):
-        res = self.w.dot(self.v) + self.b + self.m
+        res = self.w.dot(self.v) + self.b 
 	self.v = res * (res > 0)
 
-	self.m = self.m * self.f * (self.v==0)
-	print self.m.sum()
+	print self.v.sum()
     
 
     
