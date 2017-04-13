@@ -398,7 +398,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=500,
     epoch = 0
     done_looping = False
 
-    print(classifier.params[0][0].eval())
+    num = 0
+    numpy.save('../data/img/%i.npy'%(num),classifier.params[0].eval())
 
     while (epoch < n_epochs) and (not done_looping):
         epoch = epoch + 1
@@ -427,7 +428,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=500,
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
                     res = classifier.params[0].eval()
-                    misc.imsave('../data/%i.png'%(iter),classifier.params[0].eval())
+		    num = num + 1
+                    numpy.save('../data/img/%i.npy'%(num),classifier.params[0].eval())
                     #improve patience if loss improvement is good enough
                     if (
                         this_validation_loss < best_validation_loss *
