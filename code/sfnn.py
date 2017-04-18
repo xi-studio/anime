@@ -5,15 +5,16 @@ class network(object):
     def __init__(self, nnum=1000, trainable=False):
             
         self.w = csc_matrix((nnum,nnum),dtype=np.float32) 
-        self.b = np.zeros(nnum,dtype=np.float32)
-        self.v = np.zeros(nnum,dtype=np.float32)
+        self.v = csc_matrix((nnum,1),dtype=np.float32)
+	self.trainable = trainable
     
     def step(self):
-        res = self.w.dot(self.v) + self.b 
-	self.v = res * (res > 0)
+        v_stash = self.v
+        res = self.w.dot(self.v)  
+        self.v = res > 0
 
-	print self.v.sum()
-    
+	if self.trainable == True:
+	    self.w = self.w - 0.01 * v_stash * self.v.T
 
     
 def getdata():
@@ -28,7 +29,7 @@ def getdata():
     
 if __name__=='__main__':
     n = network()
-    for x in range(100):
+    for x in range(1000):
         n.step()
 
 
