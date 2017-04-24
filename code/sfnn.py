@@ -4,13 +4,14 @@ from sklearn.preprocessing import normalize
 
 import networkx as nx
 
-
 class network(object):
-    def __init__(self, w=None, nnum=1000, trainable=False):
+    def __init__(self, w=None, b=0, nnum=1000, trainable=False):
         if w!=None:
 	    self.w = w    
         else:
 	    self.w = csc_matrix((nnum,nnum),dtype=np.float32) 
+
+        self.b = b
         self.v = csc_matrix((1,nnum),dtype=np.float32)
 	self.trainable = trainable
 
@@ -26,15 +27,15 @@ class network(object):
     
     def step_predict(self):
         res = self.v.dot(self.w)  
-        self.v = res.multiply(res > 0.0)
+        self.v = res.multiply(res > self.b)
 
 	print self.v.sum()
 
     def step_train(self):
         v_stash = self.v
         res = self.v.dot(self.w)  
-        self.v = res.multiply(res > 0.0)
-        self.w = 1.1*self.w.multiply(v_stash.T>0).multiply(self.v>0)
+        self.v = res.multiply(res > self.b)
+        self.w = self.w + self.w.multiply(v_stash.T>0).multiply(self.v>0)
         self.w = normalize(self.w, norm='l1', axis=1)
 
 	print self.v.sum()
@@ -56,17 +57,21 @@ def graph():
  
     
 if __name__=='__main__':
-    graph()
+#    graph()
     idx = np.load('../data/ba_network.npy')
-    #data = np.random.uniform(0,1,idx.shape[0])
-    data = np.ones(idx.shape[0])
+    #BA = nx.random_graphs.barabasi_albert_graph(1000,20) 
+    #idx = np.array(BA.edges())
+    data = np.random.uniform(0,1,idx.shape[0])
+    #data = np.ones(idx.shape[0])
     w = csc_matrix((data, (idx[:,0], idx[:,1])), shape=(1000,1000))
     w = normalize(w, norm='l1', axis=1)
 
-    n = network(w=w)
+    n = network(w=w, b=0.0)
     #n.v[:,:20] = np.random.uniform(0,1,20)
-    n.v[:,:200] = np.ones(200)
-    n.trainable = True
-    n.run(times=20)
+    for x in range(10):
+        #n.v[:,:200] = np.random.randint(low=0,high=10,size=200)
+        n.v[:,:200] = np.ones(200)
+        n.trainable = True
+        n.run(times=10)
 
 
