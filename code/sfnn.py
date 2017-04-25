@@ -3,6 +3,7 @@ from scipy.sparse import csc_matrix
 from sklearn.preprocessing import normalize
 
 import networkx as nx
+import matplotlib.pyplot as plt
 
 class network(object):
     def __init__(self, w=None, b=0, nnum=1000, trainable=False):
@@ -49,7 +50,7 @@ def getdata():
     return data    
 
 def graph():
-    BA = nx.random_graphs.barabasi_albert_graph(1000,1) 
+    BA = nx.random_graphs.barabasi_albert_graph(1000,50) 
     idx = np.array(BA.edges())
 
     np.save('../data/ba_network.npy',idx)
@@ -57,8 +58,9 @@ def graph():
  
     
 if __name__=='__main__':
-#    graph()
+    #graph()
     idx = np.load('../data/ba_network.npy')
+    #BA = nx.random_graphs.erdos_renyi_graph(1000, 0.2)
     #BA = nx.random_graphs.barabasi_albert_graph(1000,20) 
     #idx = np.array(BA.edges())
     data = np.random.uniform(0,1,idx.shape[0])
@@ -66,12 +68,16 @@ if __name__=='__main__':
     w = csc_matrix((data, (idx[:,0], idx[:,1])), shape=(1000,1000))
     w = normalize(w, norm='l1', axis=1)
 
-    n = network(w=w, b=0.0)
+    n = network(w=w, b=0.1)
     #n.v[:,:20] = np.random.uniform(0,1,20)
     for x in range(10):
-        #n.v[:,:200] = np.random.randint(low=0,high=10,size=200)
+       # n.v[:,:200] = np.random.uniform(0,20,200)
         n.v[:,:200] = np.ones(200)
         n.trainable = True
-        n.run(times=10)
+        n.run(times=5)
+	plt.plot(n.w.toarray()[500])
+	plt.ylim(0,0.1)
+	plt.show()
+	plt.clf()
 
 
