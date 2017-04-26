@@ -32,7 +32,7 @@ class network(object):
         self.v = res.multiply(res > self.b)
 
 	print self.v.sum()
-	#show((self.v.toarray())[0])
+	show((self.v.toarray())[0])
 
     def step_train(self):
         v_stash = self.v
@@ -42,7 +42,7 @@ class network(object):
         self.w = normalize(self.w, norm='l1', axis=1)
 
 	print (self.v>0).sum()
-	#show((self.v.toarray())[0])
+	show((self.v.toarray())[0])
 
     def save_w(self,name):
 	with open(name, 'wb') as f:
@@ -75,7 +75,7 @@ def graph():
 
 def show(data):
     plt.plot(data)
-    plt.ylim(0,0.3)
+    plt.ylim(0,3)
     plt.show()
     plt.clf()
  
@@ -87,12 +87,13 @@ if __name__=='__main__':
     n = network(b=0.1)
     n.load_w(filename)
     #n.v[:,:20] = np.random.uniform(0,1,20)
-    for x in range(10):
-        n.v[:,:200] = np.random.uniform(0,0.5,200)
-        #n.v[:,:50] = np.arange(50)
-        n.trainable = True
-        n.run(times=10)
-	show(n.w.toarray()[0])
+    for x in range(30):
+        #n.v[:,:200] = np.random.uniform(0,1,200)
+        #n.v[:,:50] = np.ones(50)
+	n.v[:,x] = x+1
+        #n.trainable = True
+        n.run(times=5)
+	#show(n.w.toarray()[0])
     #n.save_w(filename)
     
 
