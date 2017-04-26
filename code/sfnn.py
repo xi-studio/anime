@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import csc_matrix
 from sklearn.preprocessing import normalize
+import cPickle
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -31,6 +32,7 @@ class network(object):
         self.v = res.multiply(res > self.b)
 
 	print self.v.sum()
+	#show((self.v.toarray())[0])
 
     def step_train(self):
         v_stash = self.v
@@ -39,8 +41,18 @@ class network(object):
         self.w = self.w + self.w.multiply(v_stash.T>0).multiply(self.v>0)
         self.w = normalize(self.w, norm='l1', axis=1)
 
-	print self.v.sum()
+	print (self.v>0).sum()
+	#show((self.v.toarray())[0])
 
+    def save_w(self,name):
+	with open(name, 'wb') as f:
+	    cPickle.dump(self.w,f)
+
+    def load_w(self,name):
+	with open(name, 'rb') as f:
+	    self.w = cPickle.load(f)
+        
+        
 def getdata():
     num = np.random.randint(low=0,high=255,size=(200,1),dtype=np.uint8)
     x =  np.unpackbits(num,axis=1)
@@ -50,34 +62,38 @@ def getdata():
     return data    
 
 def graph():
-    BA = nx.random_graphs.barabasi_albert_graph(1000,50) 
-    idx = np.array(BA.edges())
-
-    np.save('../data/ba_network.npy',idx)
-    print 'save ok'
- 
-    
-if __name__=='__main__':
-    #graph()
-    idx = np.load('../data/ba_network.npy')
     #BA = nx.random_graphs.erdos_renyi_graph(1000, 0.2)
-    #BA = nx.random_graphs.barabasi_albert_graph(1000,20) 
-    #idx = np.array(BA.edges())
+    BA = nx.random_graphs.barabasi_albert_graph(1000,10) 
+    idx = np.array(BA.edges())
     data = np.random.uniform(0,1,idx.shape[0])
     #data = np.ones(idx.shape[0])
     w = csc_matrix((data, (idx[:,0], idx[:,1])), shape=(1000,1000))
     w = normalize(w, norm='l1', axis=1)
 
-    n = network(w=w, b=0.1)
+    return w
+
+
+def show(data):
+    plt.plot(data)
+    plt.ylim(0,0.3)
+    plt.show()
+    plt.clf()
+ 
+    
+if __name__=='__main__':
+    filename = '../data/weight/ba.pkl'
+    #w = graph() 
+    #n = network(w=w, b=0.01)
+    n = network(b=0.1)
+    n.load_w(filename)
     #n.v[:,:20] = np.random.uniform(0,1,20)
     for x in range(10):
-       # n.v[:,:200] = np.random.uniform(0,20,200)
-        n.v[:,:200] = np.ones(200)
+        n.v[:,:200] = np.random.uniform(0,0.5,200)
+        #n.v[:,:50] = np.arange(50)
         n.trainable = True
-        n.run(times=5)
-	plt.plot(n.w.toarray()[500])
-	plt.ylim(0,0.1)
-	plt.show()
-	plt.clf()
+        n.run(times=10)
+	show(n.w.toarray()[0])
+    #n.save_w(filename)
+    
 
 
