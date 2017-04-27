@@ -31,8 +31,8 @@ class network(object):
         res = self.v.dot(self.w)  
         self.v = res.multiply(res > self.b)
 
-	print self.v.sum()
-	show((self.v.toarray())[0])
+	#print self.v.sum()
+	#show((self.v.toarray())[0])
 
     def step_train(self):
         v_stash = self.v
@@ -42,7 +42,7 @@ class network(object):
         self.w = normalize(self.w, norm='l1', axis=1)
 
 	print (self.v>0).sum()
-	show((self.v.toarray())[0])
+	show((self.v.toarray())[0][800:],1)
 
     def save_w(self,name):
 	with open(name, 'wb') as f:
@@ -73,27 +73,33 @@ def graph():
     return w
 
 
-def show(data):
+def show(data,dmax):
     plt.plot(data)
-    plt.ylim(0,3)
+    plt.ylim(0,dmax)
     plt.show()
     plt.clf()
  
     
 if __name__=='__main__':
-    filename = '../data/weight/ba.pkl'
+    filename = '../data/weight/work1.pkl'
     #w = graph() 
     #n = network(w=w, b=0.01)
-    n = network(b=0.1)
+    n = network(b=0.05)
     n.load_w(filename)
     #n.v[:,:20] = np.random.uniform(0,1,20)
-    for x in range(30):
-        #n.v[:,:200] = np.random.uniform(0,1,200)
-        #n.v[:,:50] = np.ones(50)
-	n.v[:,x] = x+1
-        #n.trainable = True
+
+    data = getdata()
+
+    for num in range(data[0].shape[0]):
+        n.v[:,:8] = data[0][num]
+	n.v[:,8:9] = data[1][num]
+
+        n.trainable = True
         n.run(times=5)
-	#show(n.w.toarray()[0])
+        #show(n.w.toarray()[:,100],0.3)
+
+        if num>50:
+	    break
     #n.save_w(filename)
     
 
