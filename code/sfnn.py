@@ -2,6 +2,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 from sklearn.preprocessing import normalize
 import cPickle
+import gzip
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -71,40 +72,45 @@ def graph():
 
     return w
 
-
 def show(data,dmax):
     plt.plot(data)
     plt.ylim(0,dmax)
     plt.show()
     plt.clf()
  
-    
-if __name__=='__main__':
-    filename = '../data/weight/work1.pkl'
-    w = graph() 
-    n = network(w=w, b=0.1, lr=1)
-    #n = network(b=0.1,lr=1)
-    #n.load_w(filename)
-    #n.v[:,:20] = np.random.uniform(0,1,20)
+def load_data(num):
+    with gzip.open('../data/mnist.pkl.gz','rb') as f:
+        data_set = cPickle.load(f)
+    return  data_set[0][0][1000:1000+num]
 
-    data = getdata()
     
-    for x in range(50):
-        #n.v[:,:700] = np.random.randint(low=0,high=2,size=700)
-        n.v[:,:700] = np.ones(700)
-	n.run(times=10)
-	a = n.w.sum(axis=0)
-	show(a.T,2)
-#        for num in range(data[0].shape[0]):
-#            n.v[:,:8] = data[0][num]
-#	    n.v[:,8:9] = data[1][num]
+if __name__=='__main__': 
+    data = load_data(100)
+    filename = '../data/weight/work1.pkl'
+#    w = graph() 
+#    n = network(w=w, b=0.1, lr=1)
+    n = network(b=0.1,lr=0)
+    n.load_w(filename)
 #
-#            n.run(times=3)
+#    data = getdata()
+#    
+#    for x in range(50):
+#        #n.v[:,:700] = np.random.randint(low=0,high=2,size=700)
+#        n.v[:,:700] = np.ones(700)
+#	n.run(times=10)
+#	a = n.w.sum(axis=0)
+#	show(a.T,2)
+    for num in range(1):
+        for x in data:
+            n.v[:,:784] = x 
+            n.run(times=10)
+	print 'epoche',num 
+	 
 #        print 'epoch:',x
 #        print 'sum:',n.v.sum()
 #        #show(n.w.toarray()[:,100],0.3)
 #
-#    #n.save_w(filename)
+#    n.save_w(filename)
     
 
 
