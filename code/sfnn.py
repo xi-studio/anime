@@ -28,8 +28,8 @@ class network(object):
 	       self.step_train()
 
            #print 'lr:',self.lr
-	   #print self.v.sum()
-	   #show((self.v.toarray())[0],1)
+	   print self.v.sum()
+	   #show((self.v.toarray())[0],3)
     
     def step_predict(self):
         res    = self.v.dot(self.w)  
@@ -81,25 +81,30 @@ def show(data,dmax):
     
 if __name__=='__main__':
     filename = '../data/weight/work1.pkl'
-    #w = graph() 
-    #n = network(w=w, b=0.05)
-    n = network(b=0.1,lr=1)
-    n.load_w(filename)
+    w = graph() 
+    n = network(w=w, b=0.1, lr=1)
+    #n = network(b=0.1,lr=1)
+    #n.load_w(filename)
     #n.v[:,:20] = np.random.uniform(0,1,20)
 
     data = getdata()
     
-    for x in range(20):
-        for num in range(data[0].shape[0]):
-            n.v[:,:8] = data[0][num]
-	    n.v[:,8:9] = data[1][num]
-
-            n.run(times=3)
-        print 'epoch:',x
-        print 'sum:',n.v.sum()
-        #show(n.w.toarray()[:,100],0.3)
-
-    #n.save_w(filename)
+    for x in range(50):
+        #n.v[:,:700] = np.random.randint(low=0,high=2,size=700)
+        n.v[:,:700] = np.ones(700)
+	n.run(times=10)
+	a = n.w.sum(axis=0)
+	show(a.T,2)
+#        for num in range(data[0].shape[0]):
+#            n.v[:,:8] = data[0][num]
+#	    n.v[:,8:9] = data[1][num]
+#
+#            n.run(times=3)
+#        print 'epoch:',x
+#        print 'sum:',n.v.sum()
+#        #show(n.w.toarray()[:,100],0.3)
+#
+#    #n.save_w(filename)
     
 
 
