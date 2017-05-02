@@ -7,42 +7,41 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 class network(object):
-    def __init__(self, w=None, b=0, nnum=1000, trainable=False):
+    def __init__(self, nsize=1000, w=None, b=0, lr=0):
+        
+        self.nsize = 1000
+
         if w!=None:
 	    self.w = w    
         else:
-	    self.w = csc_matrix((nnum,nnum),dtype=np.float32) 
+	    self.w = csc_matrix((nsize,nsize),dtype=np.float32) 
 
-        self.b = b
-        self.v = csc_matrix((1,nnum),dtype=np.float32)
-	self.trainable = trainable
+        self.b  = b
+        self.lr = lr
+        self.v  = csc_matrix((1,nsize),dtype=np.float32)
 
     def run(self,times=10):
-        if self.trainable == True:
-	    print "Train"
-	    for n in range(times):
-	        self.step_train()
-	else:
-	    print "Predict"
-	    for n in range(times):
-	        self.step_predict()
+        for n in range(times):
+           if self.lr == 0:
+	       self.step_predict()
+	   else:
+	       self.step_train()
+
+           #print 'lr:',self.lr
+	   #print self.v.sum()
+	   #show((self.v.toarray())[0],1)
     
     def step_predict(self):
-        res = self.v.dot(self.w)  
+        res    = self.v.dot(self.w)  
         self.v = res.multiply(res > self.b)
-
-	#print self.v.sum()
-	#show((self.v.toarray())[0])
 
     def step_train(self):
         v_stash = self.v
-        res = self.v.dot(self.w)  
-        self.v = res.multiply(res > self.b)
-        self.w = self.w + self.w.multiply(v_stash.T>0).multiply(self.v>0)
-        self.w = normalize(self.w, norm='l1', axis=1)
+        res     = self.v.dot(self.w)  
+        self.v  = res.multiply(res > self.b)
 
-	print (self.v>0).sum()
-	show((self.v.toarray())[0][800:],1)
+        self.w  = self.w + self.w.multiply(v_stash.T>0).multiply(self.v>0) * self.lr
+        self.w  = normalize(self.w, norm='l1', axis=1)
 
     def save_w(self,name):
 	with open(name, 'wb') as f:
@@ -83,23 +82,23 @@ def show(data,dmax):
 if __name__=='__main__':
     filename = '../data/weight/work1.pkl'
     #w = graph() 
-    #n = network(w=w, b=0.01)
-    n = network(b=0.05)
+    #n = network(w=w, b=0.05)
+    n = network(b=0.1,lr=1)
     n.load_w(filename)
     #n.v[:,:20] = np.random.uniform(0,1,20)
 
     data = getdata()
+    
+    for x in range(20):
+        for num in range(data[0].shape[0]):
+            n.v[:,:8] = data[0][num]
+	    n.v[:,8:9] = data[1][num]
 
-    for num in range(data[0].shape[0]):
-        n.v[:,:8] = data[0][num]
-	n.v[:,8:9] = data[1][num]
-
-        n.trainable = True
-        n.run(times=5)
+            n.run(times=3)
+        print 'epoch:',x
+        print 'sum:',n.v.sum()
         #show(n.w.toarray()[:,100],0.3)
 
-        if num>50:
-	    break
     #n.save_w(filename)
     
 
