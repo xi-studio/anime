@@ -81,15 +81,15 @@ def show(data,dmax):
 def load_data(num):
     with gzip.open('../data/mnist.pkl.gz','rb') as f:
         data_set = cPickle.load(f)
-    return  data_set[0][0][1000:1000+num]
+    return  data_set[0][0][:num]
 
     
 if __name__=='__main__': 
-    data = load_data(100)
-    filename = '../data/weight/work1.pkl'
+    data = load_data(500)
+    filename = '../data/weight/mnist_1.pkl'
 #    w = graph() 
 #    n = network(w=w, b=0.1, lr=1)
-    n = network(b=0.1,lr=0)
+    n = network(b=0.1,lr=1)
     n.load_w(filename)
 #
 #    data = getdata()
@@ -100,11 +100,18 @@ if __name__=='__main__':
 #	n.run(times=10)
 #	a = n.w.sum(axis=0)
 #	show(a.T,2)
+#    w = n.w
     for num in range(1):
+        res = 0
         for x in data:
             n.v[:,:784] = x 
-            n.run(times=10)
+            n.run(times=5)
+#            res = res + np.sum(np.abs(n.w - w))
+              
+#            w = n.w
+            
 	print 'epoche',num 
+        print 'res',res
 	 
 #        print 'epoch:',x
 #        print 'sum:',n.v.sum()
