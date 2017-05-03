@@ -71,8 +71,8 @@ def load_data(dataset):
                                  borrow=borrow)
         return shared_x, T.cast(shared_y, 'int32')
    
-    max_shape = 10000
-    v_shape = 2000
+    max_shape = 3000
+    v_shape = 3000
     test_set = (test_set[0][:max_shape],test_set[1][:max_shape])
     valid_set = (valid_set[0][:v_shape],valid_set[1][:v_shape])
     train_set = (train_set[0][:v_shape],train_set[1][:v_shape])

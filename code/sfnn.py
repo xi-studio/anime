@@ -22,15 +22,19 @@ class network(object):
         self.v  = csc_matrix((1,nsize),dtype=np.float32)
 
     def run(self,times=10):
+        base = np.zeros(1000*(times+1))
+        base[:1000] = self.v.toarray()
         for n in range(times):
            if self.lr == 0:
 	       self.step_predict()
+	       base[1000*(n+1):1000*(n+2)] = self.v.toarray()
 	   else:
 	       self.step_train()
 
            #print 'lr:',self.lr
-	   print self.v.sum()
+	   #print self.v.sum()
 	   #show((self.v.toarray())[0],3)
+        return base
     
     def step_predict(self):
         res    = self.v.dot(self.w)  
@@ -78,20 +82,35 @@ def show(data,dmax):
     plt.show()
     plt.clf()
  
+
+def sfnn_encode(data):
+    filename = '../data/weight/mnist_size_3000.pkl'
+    n = network(b=0.1,lr=0)
+    n.load_w(filename)
+    base = np.zeros((data.shape[0],1000*6))
+
+    for num,x in enumerate(data):
+        n.v[:,:784] = x 
+        result = n.run(times=5)
+        base[num] = result
+        print(num)
+
+    return base
+
 def load_data(num):
     with gzip.open('../data/mnist.pkl.gz','rb') as f:
         data_set = cPickle.load(f)
-    return  data_set[0][0][:num]
+    return  data_set[0][0][:num],data_set[0][1][:num]
 
     
 if __name__=='__main__': 
-    data = load_data(500)
-    filename = '../data/weight/mnist_1.pkl'
-#    w = graph() 
-#    n = network(w=w, b=0.1, lr=1)
-    n = network(b=0.1,lr=1)
-    n.load_w(filename)
-#
+    data,y = load_data(3000)
+    filename = '../data/weight/mnist_size_3000.pkl'
+    w = graph() 
+    n = network(w=w, b=0.1, lr=1)
+#    n = network(b=0.1,lr=0)
+#    n.load_w(filename)
+
 #    data = getdata()
 #    
 #    for x in range(50):
@@ -101,23 +120,27 @@ if __name__=='__main__':
 #	a = n.w.sum(axis=0)
 #	show(a.T,2)
 #    w = n.w
-    for num in range(1):
+    base = np.zeros((data.shape[0],1000*5))
+    for epoch in range(30):
         res = 0
-        for x in data:
+        for num,x in enumerate(data):
             n.v[:,:784] = x 
-            n.run(times=5)
-#            res = res + np.sum(np.abs(n.w - w))
-              
-#            w = n.w
+            result = n.run(times=5)
+            #result = n.run(times=5)
+	    #base[num] = result
+	    if num%100==0:
+	        print num
+                res = res + np.sum(np.abs(n.w - w))
+                w = n.w
             
-	print 'epoche',num 
+	print 'epoch',epoch 
         print 'res',res
 	 
 #        print 'epoch:',x
 #        print 'sum:',n.v.sum()
 #        #show(n.w.toarray()[:,100],0.3)
 #
-#    n.save_w(filename)
+    n.save_w(filename)
     
 
 
