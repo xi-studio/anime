@@ -22,7 +22,23 @@ class network(object):
         self.b  = b
         self.lr = lr
         self.v  = np.zeros(nsize,dtype=np.float32)
-	self.idx = self.w.nonzero()
+
+        self.idx = self.w.nonzero()
+
+        self.head = None
+        self.tail = None
+
+
+    def totrain(self):
+	idx = self.w.nonzero()
+        row = np.arange(self.w.nnz)
+
+        head = csc_matrix((np.ones(self.w.nnz), (row, idx[0])), shape=(self.w.nnz, self.nsize))
+        tail = csc_matrix((np.ones(self.w.nnz), (row, idx[1])), shape=(self.w.nnz, self.nsize))
+        
+        self.head = head
+        self.tail = tail.T
+
 
     def run(self,times=10):
         for n in range(times):
@@ -40,15 +56,12 @@ class network(object):
         self.v = res * (res > self.b)
 
     def step_train(self):
-	before = np.searchsorted(np.where(self.v>0)[0],self.idx[0])>0
+        x = self.head.dot(self.v) * self.w.data
+        self.v = self.tail.dot(x)
 
-        res    = self.w.dot(self.v) 
-        self.v = res * (res > self.b)
-
-	after  = np.searchsorted(np.where(self.v>0)[0],self.idx[1])>0 
-
-	self.w.data += self.w.data * before * after
+        self.w.data = self.w.data + self.lr * self.tail.T.dot(self.v) * x 
         self.w  = normalize(self.w, norm='l1', axis=0)
+
 
     def save_w(self,name):
 	with open(name, 'wb') as f:
@@ -141,10 +154,10 @@ def test_speed():
 #    n.load_w(filename)
 
     pic = np.ones(700)
-    for x in range(1000):
+    n.totrain()
+    for x in range(3000):
         n.v[:700] = pic 
 	n.run(times=5)
-	#print n.w.sum()
 #    n.save_w(filename)
     
     
