@@ -80,13 +80,13 @@ def getdata():
     data = (x,y)
     return data    
 
-def graph():
+def graph(nsize=1000,edges=10):
     #BA = nx.random_graphs.erdos_renyi_graph(1000, 0.2)
-    BA = nx.random_graphs.barabasi_albert_graph(1000,10) 
+    BA = nx.random_graphs.barabasi_albert_graph(nsize,edges) 
     idx = np.array(BA.edges())
     data = np.random.uniform(0,1,idx.shape[0])
     #data = np.ones(idx.shape[0])
-    w = csc_matrix((data, (idx[:,1], idx[:,0])), shape=(1000,1000))
+    w = csc_matrix((data, (idx[:,1], idx[:,0])), shape=(nsize,nsize))
     w = normalize(w, norm='l1', axis=0)
 
     return w
@@ -119,8 +119,8 @@ def load_data(num):
 
 def test():
     data,y = load_data(3000)
-    filename = '../data/weight/mnist_size_3000.pkl'
-    w = graph() 
+    filename = '../data/weight/test_speed.pkl'
+    w = graph(nsize=100,edges=10) 
     n = network(w=w, b=0.1, lr=0)
 
     base = np.zeros((data.shape[0],1000*5))
@@ -147,16 +147,16 @@ def test():
 
 @profile
 def test_speed():
-    filename = '../data/weight/work1.pkl'
-    w = graph() 
-    n = network(w=w, b=0.1, lr=1)
+    filename = '../data/weight/test_speed.pkl'
+    w = graph(nsize=100,edges=10) 
+    n = network(w=w, b=0.1, lr=0, nsize=100)
 #    n = network(b=0.1,lr=0)
 #    n.load_w(filename)
 
     pic = np.ones(700)
     n.totrain()
     for x in range(3000):
-        n.v[:700] = pic 
+        #n.v[:700] = pic 
 	n.run(times=5)
 #    n.save_w(filename)
     
