@@ -1,7 +1,7 @@
 import numpy as np
 import cPickle
 import gzip
-from scipy.sparse import csc_matrix
+from scipy.sparse import *
 from sklearn.preprocessing import normalize
 
 from profilehooks import profile
@@ -86,8 +86,11 @@ def graph(nsize=1000,edges=10):
     idx = np.array(BA.edges())
     data = np.random.uniform(0,1,idx.shape[0])
     #data = np.ones(idx.shape[0])
-    w = csc_matrix((data, (idx[:,1], idx[:,0])), shape=(nsize,nsize))
+    w = csr_matrix((data, (idx[:,1], idx[:,0])), shape=(nsize,nsize))
+    print w.format
     w = normalize(w, norm='l1', axis=0)
+    w = w.tocsr()
+    #print 'norm',w.format
 
     return w
 
@@ -148,8 +151,8 @@ def test():
 @profile
 def test_speed():
     filename = '../data/weight/test_speed.pkl'
-    w = graph(nsize=100,edges=10) 
-    n = network(w=w, b=0.1, lr=0, nsize=100)
+    w = graph(nsize=1000,edges=10) 
+    n = network(w=w, b=0.1, lr=0, nsize=1000)
 #    n = network(b=0.1,lr=0)
 #    n.load_w(filename)
 
@@ -158,6 +161,7 @@ def test_speed():
     for x in range(3000):
         #n.v[:700] = pic 
 	n.run(times=5)
+    print n.w.format
 #    n.save_w(filename)
     
     
