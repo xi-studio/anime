@@ -41,8 +41,11 @@ class network(object):
     def step_train(self):
         self.v1[:,0] = self.v
         res = np.dot(self.v,self.w)
-	self.v = res * (res > self.b) * (res <self.c)
+
+	self.v = res * (res > self.b) * (res <self.c) + self.c * (res >=self.c)
         #self.v = res * (res > self.b)
+
+
 
         self.w = self.w + self.lr*self.v1*self.w* self.v
         self.w = normalize(self.w, norm='l1', axis=1)
@@ -88,9 +91,9 @@ def test():
 #    n = network(b=0.1,lr=0)
 #    n.load_w(filename)
 
-    pic = np.ones(30)
+    pic = np.ones(50)
     for x in range(20):
-        n.v[:30] = pic 
+        n.v[:50] = pic 
 	n.run(times=5)
 #    n.save_w(filename)
     
