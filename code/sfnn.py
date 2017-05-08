@@ -62,7 +62,6 @@ class network(object):
         self.w.data = self.w.data + self.lr * self.tail.T.dot(self.v) * x 
         self.w  = normalize(self.w, norm='l1', axis=0)
 
-
     def save_w(self,name):
 	with open(name, 'wb') as f:
 	    cPickle.dump(self.w,f)
@@ -120,35 +119,8 @@ def load_data(num):
         data_set = cPickle.load(f)
     return  data_set[0][0][:num],data_set[0][1][:num]
 
-def test():
-    data,y = load_data(3000)
-    filename = '../data/weight/test_speed.pkl'
-    w = graph(nsize=100,edges=10) 
-    n = network(w=w, b=0.1, lr=0)
 
-    base = np.zeros((data.shape[0],1000*5))
-    for epoch in range(30):
-        res = 0
-        for num,x in enumerate(data):
-            n.v[:,:784] = x 
-            result = n.run(times=5)
-            #result = n.run(times=5)
-	    #base[num] = result
-	    if num%100==0:
-	        print num
-                res = res + np.sum(np.abs(n.w - w))
-                w = n.w
-            
-	print 'epoch',epoch 
-        print 'res',res
-	 
-#        print 'epoch:',x
-#        print 'sum:',n.v.sum()
-#        #show(n.w.toarray()[:,100],0.3)
-#
-    n.save_w(filename)
-
-@profile
+#@profile
 def test_speed():
     filename = '../data/weight/test_speed.pkl'
     w = graph(nsize=1000,edges=10) 
