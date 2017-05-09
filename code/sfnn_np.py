@@ -10,20 +10,33 @@ import matplotlib.pyplot as plt
 
 
 class network(object):
-    def __init__(self, nsize=1000, w=None, b=0, c=2, lr=0):
+    def __init__(self, nsize=1000, w=None, b=None, e=None, dr=0.1, lr=0, bmax=2):
         
         self.nsize = nsize
 
-        if w!=None:
-	    self.w = w    
+        if w is None:
+            self.w = np.zeros((self.nsize,self.nsize))
         else:
-            self.w = np.zeros((nsize,nsize))
+	    self.w = w    
+	
+	if b is None:
+            #self.b = np.random.uniform(0,1,size=self.nsize)
+            self.b = np.ones(self.nsize)*0.01
+	else:
+            self.b = b
+	    
+	if e is None:
+            #self.e = np.ones(self.nsize)
+            self.e = np.random.uniform(0,1,size=self.nsize)
+	else:
+            self.e = e
 
-        self.b  = b
-        self.c  = c
+	self.dr = dr
         self.lr = lr
+	self.bmax = bmax
+
         self.v  = np.zeros(nsize)
-        self.v1 = np.zeros((nsize,1))
+        self.v_cash = np.zeros((nsize,1))
 
 
     def run(self,times=10):
@@ -39,23 +52,20 @@ class network(object):
         self.v = res * (res > self.b)
 
     def step_train(self):
-        self.v1[:,0] = self.v
+        self.v_cash[:,0] = self.v
         res = np.dot(self.v,self.w)
 
-	self.v = (res - self.b) * (res > self.b) * (res <self.c) + self.c * (res >=self.c)
-        #self.v = res * (res > self.b)
+	#self.v = (res - self.b) * (res > self.b) * (res <self.c) + self.c * (res >=self.c)
+        self.v = (res - self.b) * ((res - self.b) > 0)
 
-
-
-        self.w = self.w + self.lr*self.v1*self.w* self.v
+        self.w = self.w + self.lr * self.v_cash * self.w * (self.v * self.e)
         self.w = normalize(self.w, norm='l1', axis=1)
+	#self.b = self.b + self.lr * res * self.dr * self.e
        
 
-        fig, ax = plt.subplots(figsize=(15, 15))
-        plt.imshow(self.w)
-        #plt.matshow(self.w, fignum=False, cmap='Blues', vmin=0, vmax=1.0 , aspect='auto')
-        plt.show()
-        #plt.clf()
+        #fig, ax = plt.subplots(figsize=(10, 10))
+        #plt.imshow(self.w)
+        #plt.show()
 
     def save_w(self,name):
 	with open(name, 'wb') as f:
@@ -86,16 +96,17 @@ def show(data,dmax):
 
 def test():
     filename = '../data/weight/test_200.pkl'
-    w = graph(nsize=200,edges=10) 
-    n = network(w=w, b=0.1, lr=1, nsize=200)
-#    n = network(b=0.1,lr=0)
-#    n.load_w(filename)
+#    w = graph(nsize=200,edges=10) 
+#    n = network(w=w, b=0.1, lr=1, nsize=200)
+    n = network(b=0.1,lr=1, nsize=200)
+    n.load_w(filename)
 
     pic = np.ones(50)
-    for x in range(100):
+    for x in range(30):
         n.v[:50] = pic 
-	n.run(times=5)
-    n.save_w(filename)
+	n.run(times=10)
+        #show(n.b,1)
+#    n.save_w(filename)
     
     
 if __name__=='__main__': 
