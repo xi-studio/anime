@@ -42,7 +42,7 @@ class network(object):
         self.v1[:,0] = self.v
         res = np.dot(self.v,self.w)
 
-	self.v = res * (res > self.b) * (res <self.c) + self.c * (res >=self.c)
+	self.v = (res - self.b) * (res > self.b) * (res <self.c) + self.c * (res >=self.c)
         #self.v = res * (res > self.b)
 
 
@@ -85,17 +85,17 @@ def show(data,dmax):
  
 
 def test():
-    filename = '../data/weight/test_100.pkl'
-    w = graph(nsize=100,edges=10) 
-    n = network(w=w, b=0.01, lr=1, nsize=100)
+    filename = '../data/weight/test_200.pkl'
+    w = graph(nsize=200,edges=10) 
+    n = network(w=w, b=0.1, lr=1, nsize=200)
 #    n = network(b=0.1,lr=0)
 #    n.load_w(filename)
 
     pic = np.ones(50)
-    for x in range(20):
+    for x in range(100):
         n.v[:50] = pic 
 	n.run(times=5)
-#    n.save_w(filename)
+    n.save_w(filename)
     
     
 if __name__=='__main__': 
