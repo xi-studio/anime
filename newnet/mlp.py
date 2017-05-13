@@ -35,6 +35,7 @@ import cPickle
 
 import theano
 import theano.tensor as T
+from scipy import misc
 
 
 from logistic_sgd import LogisticRegression
@@ -70,12 +71,12 @@ def load_data(dataset):
                                  borrow=borrow)
         return shared_x, T.cast(shared_y, 'int32')
    
-#    max_shape = 5000
-#    v_shape = 2000
-#    test_set = (test_set[0][:max_shape],test_set[1][:max_shape])
-#    valid_set = (valid_set[0][:v_shape],valid_set[1][:v_shape])
-#    train_set = (train_set[0][:v_shape],train_set[1][:v_shape])
-#    
+    max_shape = 3000
+    v_shape = 3000
+    test_set = (test_set[0][:max_shape],test_set[1][:max_shape])
+    valid_set = (valid_set[0][:v_shape],valid_set[1][:v_shape])
+    train_set = (train_set[0][:v_shape],train_set[1][:v_shape])
+    
 
     test_set_x, test_set_y = shared_dataset(test_set)
     valid_set_x, valid_set_y = shared_dataset(valid_set)
@@ -248,8 +249,8 @@ class MLP(object):
         self.input = input
 
 
-def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
-             dataset='../data/mnist.pkl.gz', batch_size=20, n_hidden=500):
+def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=500,
+             dataset='../data/mnist.pkl.gz', batch_size=20, n_hidden=50):
     """
     Demonstrate stochastic gradient descent optimization for a multilayer
     perceptron
@@ -397,6 +398,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     epoch = 0
     done_looping = False
 
+    num = 0
+    numpy.save('../data/b/%i.npy'%(num),classifier.params[0].eval())
+
     while (epoch < n_epochs) and (not done_looping):
         epoch = epoch + 1
         for minibatch_index in range(n_train_batches):
@@ -423,6 +427,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
+                    res = classifier.params[0].eval()
+		    num = num + 1
+                    numpy.save('../data/b/%i.npy'%(num),classifier.params[1].eval())
                     #improve patience if loss improvement is good enough
                     if (
                         this_validation_loss < best_validation_loss *
