@@ -12,6 +12,9 @@ data/midi.zip
 data/*.pkl.gz
 data/*.pkl
 data/
+src/*.pkl
+src/*.pyc
+src/*.jpg
 html
 *.pyc
 *~

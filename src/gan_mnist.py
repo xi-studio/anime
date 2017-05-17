@@ -195,7 +195,7 @@ def generate_image(frame, true_dist):
     samples = session.run(fixed_noise_samples)
     lib.save_images.save_images(
         samples.reshape((128, 28, 28)), 
-        'data/mnist_img/samples_{}.png'.format(frame)
+        '../data/mnist_img/samples_{}.png'.format(frame)
     )
 
 # Dataset iterator
@@ -206,49 +206,50 @@ def inf_train_gen():
             yield images
 
 # Train loop
-with tf.Session() as session:
-
-    session.run(tf.initialize_all_variables())
-
-    gen = inf_train_gen()
-
-    for iteration in xrange(ITERS):
-        start_time = time.time()
-
-        if iteration > 0:
-            _ = session.run(gen_train_op)
-
-        if MODE == 'dcgan':
-            disc_iters = 1
-        else:
-            disc_iters = CRITIC_ITERS
-        for i in xrange(disc_iters):
-            _data = gen.next()
-            _disc_cost, _ = session.run(
-                [disc_cost, disc_train_op],
-                feed_dict={real_data: _data}
-            )
-            if clip_disc_weights is not None:
-                _ = session.run(clip_disc_weights)
-
-        lib.plot.plot('train disc cost', _disc_cost)
-        lib.plot.plot('time', time.time() - start_time)
-
-        # Calculate dev loss and generate samples every 100 iters
-        if iteration % 100 == 99:
-            dev_disc_costs = []
-            for images,_ in dev_gen():
-                _dev_disc_cost = session.run(
-                    disc_cost, 
-                    feed_dict={real_data: images}
+with tf.device('/gpu:4'):
+    with tf.Session() as session:
+    
+        session.run(tf.initialize_all_variables())
+    
+        gen = inf_train_gen()
+    
+        for iteration in xrange(ITERS):
+            start_time = time.time()
+    
+            if iteration > 0:
+                _ = session.run(gen_train_op)
+    
+            if MODE == 'dcgan':
+                disc_iters = 1
+            else:
+                disc_iters = CRITIC_ITERS
+            for i in xrange(disc_iters):
+                _data = gen.next()
+                _disc_cost, _ = session.run(
+                    [disc_cost, disc_train_op],
+                    feed_dict={real_data: _data}
                 )
-                dev_disc_costs.append(_dev_disc_cost)
-            lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
-
-            generate_image(iteration, _data)
-
-        # Write logs every 100 iters
-        if (iteration < 5) or (iteration % 100 == 99):
-            lib.plot.flush()
-
-        lib.plot.tick()
+                if clip_disc_weights is not None:
+                    _ = session.run(clip_disc_weights)
+    
+            lib.plot.plot('train disc cost', _disc_cost)
+            lib.plot.plot('time', time.time() - start_time)
+    
+            # Calculate dev loss and generate samples every 100 iters
+            if iteration % 100 == 99:
+                dev_disc_costs = []
+                for images,_ in dev_gen():
+                    _dev_disc_cost = session.run(
+                        disc_cost, 
+                        feed_dict={real_data: images}
+                    )
+                    dev_disc_costs.append(_dev_disc_cost)
+                lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
+    
+                generate_image(iteration, _data)
+    
+            # Write logs every 100 iters
+            if (iteration < 5) or (iteration % 100 == 99):
+                lib.plot.flush()
+    
+            lib.plot.tick()
