@@ -6,11 +6,11 @@ import gzip
 import glob
 
 
-SCALE = 28
-PILEN = 1+25+1+1
+SCALE = 100
+PILEN = 1+97+1+1
 
 def Note2array(onoff, pitch , velocity , tick ):
-    pitch = int(pitch/5)
+    pitch = int(pitch/1.3)
     note = np.zeros(PILEN)
     note[0] = onoff
     note[pitch+1] = 1 
@@ -58,14 +58,16 @@ def miditomatrix(dataset):
         num = num + 1
        
     print num
+    print len(base)
     return np.array(base)
 
 
 if __name__=="__main__":
     data = miditomatrix('../data/midi_set/*.mid')
     data = data[:-(data.shape[0]%100)]
-    target = np.ones(data.shape[0])
-    res = ((data,target),(data,target),(data,target))
+    ta = np.ones(data.shape[0])
+    res = (data,data)
+    res = ((data,ta),(data,ta),(data,ta))
     with gzip.open("../data/midi.pkl.gz","wb") as f:
         cPickle.dump(res,f)
 

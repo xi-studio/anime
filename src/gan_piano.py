@@ -16,7 +16,7 @@ import tflib.ops.conv2d
 import tflib.ops.batchnorm
 import tflib.ops.deconv2d
 import tflib.save_images
-import tflib.midi
+import tflib.piano
 import tflib.plot
 
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
@@ -25,8 +25,8 @@ BATCH_SIZE = 10 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 #ITERS = 200000 # How many generator iterations to train for 
-ITERS = 20000 # How many generator iterations to train for 
-OUTPUT_DIM = 10000 # Number of pixels in MNIST (28*28)
+ITERS = 100 # How many generator iterations to train for 
+OUTPUT_DIM = 105*105 # Number of pixels in MNIST (28*28)
 
 lib.print_model_settings(locals().copy())
 
@@ -57,18 +57,16 @@ def Generator(n_samples, noise=None):
     if noise is None:
         noise = tf.random_normal([n_samples, 128])
 
-    output = lib.ops.linear.Linear('Generator.Input', 128, 13*13*4*DIM, noise)
+    output = lib.ops.linear.Linear('Generator.Input', 128, 14*14*4*DIM, noise)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Generator.BN1', [0], output)
     output = tf.nn.relu(output)
-    output = tf.reshape(output, [-1, 4*DIM, 13, 13])
+    output = tf.reshape(output, [-1, 4*DIM, 14, 14])
 
     output = lib.ops.deconv2d.Deconv2D('Generator.2', 4*DIM, 2*DIM, 5, output)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
     output = tf.nn.relu(output)
-
-    output = output[:,:,:25,:25]
 
     output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
     if MODE == 'wgan':
@@ -76,12 +74,13 @@ def Generator(n_samples, noise=None):
     output = tf.nn.relu(output)
 
     output = lib.ops.deconv2d.Deconv2D('Generator.5', DIM, 1, 5, output)
+    output = output[:,:,:105,:105]
     output = tf.nn.sigmoid(output)
 
     return tf.reshape(output, [-1, OUTPUT_DIM])
 
 def Discriminator(inputs):
-    output = tf.reshape(inputs, [-1, 1, 100, 100])
+    output = tf.reshape(inputs, [-1, 1, 105, 105])
 
     output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
     output = LeakyReLU(output)
@@ -96,8 +95,8 @@ def Discriminator(inputs):
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
     output = LeakyReLU(output)
 
-    output = tf.reshape(output, [-1, 13*13*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 13*13*4*DIM, 1, output)
+    output = tf.reshape(output, [-1, 14*14*4*DIM])
+    output = lib.ops.linear.Linear('Discriminator.Output', 14*14*4*DIM, 1, output)
 
     return tf.reshape(output, [-1])
 
@@ -194,63 +193,64 @@ fixed_noise_samples = Generator(20, noise=fixed_noise)
 def generate_image(frame, true_dist):
     samples = session.run(fixed_noise_samples)
     lib.save_images.save_images(
-        samples.reshape((20, 100, 100)), 
-        '../data/midi_img/samples_{}.png'.format(frame)
+        samples.reshape((20, 105, 105)), 
+        '../data/song_img/samples_{}.png'.format(frame)
     )
 
 # Dataset iterator
-train_gen, dev_gen, test_gen = lib.midi.load(BATCH_SIZE, BATCH_SIZE)
+train_gen, dev_gen = lib.piano.load(BATCH_SIZE, BATCH_SIZE)
 def inf_train_gen():
     while True:
         for images,targets in train_gen():
             yield images
 
 # Train loop
-with tf.device('/gpu:4'):  
-    with tf.Session() as session:
-    
-        session.run(tf.initialize_all_variables())
-    
-        gen = inf_train_gen()
-        print 'gen',gen
-    
-        for iteration in xrange(ITERS):
-            start_time = time.time()
-    
-            if iteration > 0:
-                _ = session.run(gen_train_op)
-    
-            if MODE == 'dcgan':
-                disc_iters = 1
-            else:
-                disc_iters = CRITIC_ITERS
-            for i in xrange(disc_iters):
-                _data = gen.next()
-                _disc_cost, _ = session.run(
-                    [disc_cost, disc_train_op],
-                    feed_dict={real_data: _data}
+saver = tf.train.Saver()
+with tf.Session() as session:
+
+    session.run(tf.initialize_all_variables())
+
+    gen = inf_train_gen()
+
+    for iteration in xrange(ITERS):
+        start_time = time.time()
+
+        if iteration > 0:
+            _ = session.run(gen_train_op)
+
+        if MODE == 'dcgan':
+            disc_iters = 1
+        else:
+            disc_iters = CRITIC_ITERS
+        for i in xrange(disc_iters):
+            _data = gen.next()
+            _disc_cost, _ = session.run(
+                [disc_cost, disc_train_op],
+                feed_dict={real_data: _data}
+            )
+            if clip_disc_weights is not None:
+                _ = session.run(clip_disc_weights)
+        lib.plot.plot('train disc cost', _disc_cost)
+        lib.plot.plot('time', time.time() - start_time)
+
+        # Calculate dev loss and generate samples every 100 iters
+        if iteration % 100 == 99:
+            dev_disc_costs = []
+            for images,_ in dev_gen():
+                _dev_disc_cost = session.run(
+                    disc_cost, 
+                    feed_dict={real_data: images}
                 )
-                if clip_disc_weights is not None:
-                    _ = session.run(clip_disc_weights)
-    
-            lib.plot.plot('train disc cost', _disc_cost)
-            lib.plot.plot('time', time.time() - start_time)
-    
-            # Calculate dev loss and generate samples every 100 iters
-            if iteration % 100 == 99:
-                dev_disc_costs = []
-                for images,_ in dev_gen():
-                    _dev_disc_cost = session.run(
-                        disc_cost, 
-                        feed_dict={real_data: images}
-                    )
-                    dev_disc_costs.append(_dev_disc_cost)
-                lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
-    
-                generate_image(iteration, _data)
-    
-            # Write logs every 100 iters
-            if (iteration < 5) or (iteration % 100 == 99):
-                lib.plot.flush()
-    
-            lib.plot.tick()
+                dev_disc_costs.append(_dev_disc_cost)
+            lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
+
+            generate_image(iteration, _data)
+
+        if iteration == ITERS-10:
+            print 'save'
+            saver.save(session, '../data/mymodel')
+        # Write logs every 100 iters
+        if (iteration < 5) or (iteration % 100 == 99):
+            lib.plot.flush()
+
+        lib.plot.tick()
