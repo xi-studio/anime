@@ -20,12 +20,12 @@ import tflib.piano
 import tflib.plot
 
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
-DIM = 10 # Model dimensionality
+DIM = 30 # Model dimensionality
 BATCH_SIZE = 10 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
-#ITERS = 200000 # How many generator iterations to train for 
-ITERS = 100 # How many generator iterations to train for 
+ITERS = 20000 # How many generator iterations to train for 
+#ITERS = 100 # How many generator iterations to train for 
 OUTPUT_DIM = 105*105 # Number of pixels in MNIST (28*28)
 
 lib.print_model_settings(locals().copy())
@@ -206,51 +206,52 @@ def inf_train_gen():
 
 # Train loop
 saver = tf.train.Saver()
-with tf.Session() as session:
-
-    session.run(tf.initialize_all_variables())
-
-    gen = inf_train_gen()
-
-    for iteration in xrange(ITERS):
-        start_time = time.time()
-
-        if iteration > 0:
-            _ = session.run(gen_train_op)
-
-        if MODE == 'dcgan':
-            disc_iters = 1
-        else:
-            disc_iters = CRITIC_ITERS
-        for i in xrange(disc_iters):
-            _data = gen.next()
-            _disc_cost, _ = session.run(
-                [disc_cost, disc_train_op],
-                feed_dict={real_data: _data}
-            )
-            if clip_disc_weights is not None:
-                _ = session.run(clip_disc_weights)
-        lib.plot.plot('train disc cost', _disc_cost)
-        lib.plot.plot('time', time.time() - start_time)
-
-        # Calculate dev loss and generate samples every 100 iters
-        if iteration % 100 == 99:
-            dev_disc_costs = []
-            for images,_ in dev_gen():
-                _dev_disc_cost = session.run(
-                    disc_cost, 
-                    feed_dict={real_data: images}
+with tf.device('/gpu:0'):
+    with tf.Session() as session:
+    
+        session.run(tf.initialize_all_variables())
+    
+        gen = inf_train_gen()
+    
+        for iteration in xrange(ITERS):
+            start_time = time.time()
+    
+            if iteration > 0:
+                _ = session.run(gen_train_op)
+    
+            if MODE == 'dcgan':
+                disc_iters = 1
+            else:
+                disc_iters = CRITIC_ITERS
+            for i in xrange(disc_iters):
+                _data = gen.next()
+                _disc_cost, _ = session.run(
+                    [disc_cost, disc_train_op],
+                    feed_dict={real_data: _data}
                 )
-                dev_disc_costs.append(_dev_disc_cost)
-            lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
-
-            generate_image(iteration, _data)
-
-        if iteration == ITERS-10:
-            print 'save'
-            saver.save(session, '../data/mymodel')
-        # Write logs every 100 iters
-        if (iteration < 5) or (iteration % 100 == 99):
-            lib.plot.flush()
-
-        lib.plot.tick()
+                if clip_disc_weights is not None:
+                    _ = session.run(clip_disc_weights)
+            lib.plot.plot('train disc cost', _disc_cost)
+            lib.plot.plot('time', time.time() - start_time)
+    
+            # Calculate dev loss and generate samples every 100 iters
+            if iteration % 100 == 99:
+                dev_disc_costs = []
+                for images,_ in dev_gen():
+                    _dev_disc_cost = session.run(
+                        disc_cost, 
+                        feed_dict={real_data: images}
+                    )
+                    dev_disc_costs.append(_dev_disc_cost)
+                lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
+    
+                generate_image(iteration, _data)
+    
+            if iteration == ITERS-10:
+                print 'save'
+            #    saver.save(session, '../data/model/yiruma')
+            # Write logs every 100 iters
+            if (iteration < 5) or (iteration % 100 == 99):
+                lib.plot.flush()
+    
+            lib.plot.tick()

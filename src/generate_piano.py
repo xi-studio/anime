@@ -19,6 +19,9 @@ import tflib.save_images
 import tflib.piano
 import tflib.plot
 
+from scipy.io import wavfile
+BIT = np.power(2,8)
+
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 10 # Model dimensionality
 BATCH_SIZE = 10 # Batch size
@@ -205,12 +208,18 @@ def inf_train_gen():
             yield images
 
 
-sess=tf.Session()    
-saver = tf.train.import_meta_graph('../data/mymodel.meta')
-saver.restore(sess,tf.train.latest_checkpoint('../data'))
-sess.run(tf.global_variables_initializer())
+with tf.device('/cpu:0'): 
+    sess=tf.Session()    
+    saver = tf.train.import_meta_graph('../data/model/yiruma.meta')
+    saver.restore(sess,tf.train.latest_checkpoint('../data/model'))
+    sess.run(tf.global_variables_initializer())
 
-fixed_noise = tf.constant(np.random.normal(size=(20, 128)).astype('float32'))
-fixed_noise_samples = Generator(20, noise=fixed_noise)
-samples = sess.run(fixed_noise_samples)
-print samples
+    fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
+    fixed_noise_samples = Generator(128, noise=fixed_noise)
+    samples = sess.run(fixed_noise_samples)
+    res = samples.reshape(128*11025)*BIT
+    print np.max(res)
+    print np.min(res)
+    #res = res.astype(np.int16)
+    #wavfile.write('../data/first.wav',11025,res)
+    print res

@@ -30,7 +30,7 @@ def mnist_generator(data, batch_size, n_labelled, limit=None):
             numpy.random.set_state(rng_state)
             numpy.random.shuffle(labelled)
 
-        image_batches = images.reshape(-1, batch_size, 100*100)
+        image_batches = images.reshape(-1, batch_size, 31*31)
         target_batches = targets.reshape(-1, batch_size)
 
         if n_labelled is not None:
@@ -53,7 +53,9 @@ def load(batch_size, test_batch_size, n_labelled=None):
         print "Couldn't find MNIST dataset in /tmp, downloading..."
 
     with gzip.open(filepath, 'rb') as f:
-        train_data, dev_data, test_data = pickle.load(f)
+        train_data = pickle.load(f)
+        dev_data   = train_data
+        test_data  = train_data 
 
     return (
         mnist_generator(train_data, batch_size, n_labelled), 

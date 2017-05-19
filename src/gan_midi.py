@@ -206,7 +206,7 @@ def inf_train_gen():
             yield images
 
 # Train loop
-with tf.device('/gpu:4'):  
+with tf.device('/gpu:0'):  
     with tf.Session() as session:
     
         session.run(tf.initialize_all_variables())
