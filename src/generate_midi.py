@@ -24,8 +24,8 @@ DIM = 30 # Model dimensionality
 BATCH_SIZE = 10 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
-#ITERS = 50000 # How many generator iterations to train for 
-ITERS = 5000 # How many generator iterations to train for 
+ITERS = 50000 # How many generator iterations to train for 
+#ITERS = 2000 # How many generator iterations to train for 
 OUTPUT_DIM = 80*80 # Number of pixels in MNIST (28*28)
 
 lib.print_model_settings(locals().copy())
@@ -109,29 +109,7 @@ disc_fake = Discriminator(fake_data)
 gen_params = lib.params_with_name('Generator')
 disc_params = lib.params_with_name('Discriminator')
 
-if MODE == 'wgan':
-    gen_cost = -tf.reduce_mean(disc_fake)
-    disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
-
-    gen_train_op = tf.train.RMSPropOptimizer(
-        learning_rate=5e-5
-    ).minimize(gen_cost, var_list=gen_params)
-    disc_train_op = tf.train.RMSPropOptimizer(
-        learning_rate=5e-5
-    ).minimize(disc_cost, var_list=disc_params)
-
-    clip_ops = []
-    for var in lib.params_with_name('Discriminator'):
-        clip_bounds = [-.01, .01]
-        clip_ops.append(
-            tf.assign(
-                var, 
-                tf.clip_by_value(var, clip_bounds[0], clip_bounds[1])
-            )
-        )
-    clip_disc_weights = tf.group(*clip_ops)
-
-elif MODE == 'wgan-gp':
+if MODE == 'wgan-gp':
     gen_cost = -tf.reduce_mean(disc_fake)
     disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
 
@@ -160,102 +138,16 @@ elif MODE == 'wgan-gp':
 
     clip_disc_weights = None
 
-elif MODE == 'dcgan':
-    gen_cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        disc_fake, 
-        tf.ones_like(disc_fake)
-    ))
 
-    disc_cost =  tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        disc_fake, 
-        tf.zeros_like(disc_fake)
-    ))
-    disc_cost += tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        disc_real, 
-        tf.ones_like(disc_real)
-    ))
-    disc_cost /= 2.
-
-    gen_train_op = tf.train.AdamOptimizer(
-        learning_rate=2e-4, 
-        beta1=0.5
-    ).minimize(gen_cost, var_list=gen_params)
-    disc_train_op = tf.train.AdamOptimizer(
-        learning_rate=2e-4, 
-        beta1=0.5
-    ).minimize(disc_cost, var_list=disc_params)
-
-    clip_disc_weights = None
-
-# For saving samples
-fixed_noise = tf.constant(np.random.normal(size=(20, 128)).astype('float32'))
-fixed_noise_samples = Generator(20, noise=fixed_noise)
-def generate_image(frame, true_dist):
-    samples = session.run(fixed_noise_samples)
-    print "max",np.max(samples)
-    print "min",np.min(samples)
-    lib.save_images.save_images(
-        samples.reshape((20, 80, 80)), 
-        '../data/midi_img/samples_{}.png'.format(frame)
-    )
 
 # Dataset iterator
-train_gen, dev_gen, test_gen = lib.midi.load(BATCH_SIZE, BATCH_SIZE)
-def inf_train_gen():
-    while True:
-        for images,targets in train_gen():
-            yield images
 
+fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
+fixed_noise_samples = Generator(128, noise=fixed_noise)
 # Train loop
+sess=tf.Session()    
 saver = tf.train.Saver()
-with tf.device('/gpu:0'):  
-    with tf.Session() as session:
-    
-        session.run(tf.initialize_all_variables())
-    
-        gen = inf_train_gen()
-        print 'gen',gen
-    
-        for iteration in xrange(ITERS):
-            start_time = time.time()
-    
-            if iteration > 0:
-                _ = session.run(gen_train_op)
-    
-            if MODE == 'dcgan':
-                disc_iters = 1
-            else:
-                disc_iters = CRITIC_ITERS
-            for i in xrange(disc_iters):
-                _data = gen.next()
-                _disc_cost, _ = session.run(
-                    [disc_cost, disc_train_op],
-                    feed_dict={real_data: _data}
-                )
-                if clip_disc_weights is not None:
-                    _ = session.run(clip_disc_weights)
-    
-            lib.plot.plot('train disc cost', _disc_cost)
-            lib.plot.plot('time', time.time() - start_time)
-    
-            # Calculate dev loss and generate samples every 100 iters
-            if iteration % 100 == 99:
-                dev_disc_costs = []
-                for images,_ in dev_gen():
-                    _dev_disc_cost = session.run(
-                        disc_cost, 
-                        feed_dict={real_data: images}
-                    )
-                    dev_disc_costs.append(_dev_disc_cost)
-                lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))
-    
-                generate_image(iteration, _data)
+saver.restore(sess,tf.train.latest_checkpoint('../data/model'))
 
-            if iteration % 1000 == 999:
-                saver.save(session, '../data/model/midi_model', global_step=iteration)
-    
-            # Write logs every 100 iters
-            if (iteration < 5) or (iteration % 100 == 99):
-                lib.plot.flush()
-    
-            lib.plot.tick()
+samples = sess.run(fixed_noise_samples)
+print samples>0.2

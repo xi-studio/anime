@@ -12,7 +12,8 @@ ts  = tmp/16 # time scale
 ps  = 3      # picth scale
 sc  = 5     # 10 seconds
 
-size = (16*sc, (127//ps)*2)
+size = (16*sc, 40*2)
+#size = (16*sc, (127//ps)*2)
 
 print 'Pic size',size
 
@@ -24,6 +25,8 @@ def midi2keystrikes(filename,tracknum=0):
     abs_time = 0
     for e in events:
         if isinstance(e,midi.NoteOnEvent):
+            if e.pitch >120:
+                e.pitch = 120
             abs_time = abs_time + e.tick
             res = [int(abs_time / ts), (e.pitch // ps) * 2 + 1]
             result.append(res)
@@ -37,10 +40,10 @@ def midi2keystrikes(filename,tracknum=0):
 
     timesize = result[-1][0]    
     timesize = np.ceil(timesize / (16*sc)) * 16 *sc
-    base = np.zeros((int(timesize),(127//ps)*2))
+    base = np.zeros((int(timesize),40*2))
     idx = np.array(result)   
     base[idx[:,0],idx[:,1]] = 1
-    base = base.reshape((-1,80*(127//ps)*2))
+    base = base.reshape((-1,80*40*2))
     return base 
 
 
@@ -57,14 +60,15 @@ def miditomatrix(dataset):
         num = num + 1
        
     print num
-    print len(base)
     return np.array(base)
 
 
 if __name__=="__main__":
     data = miditomatrix('../data/midi_set/*.mid')
     data = data[:-(data.shape[0]%100)]
+    data = data.astype(np.int8)
     ta = np.ones(data.shape[0])
+    print data.shape
     res = (data,ta)
     with gzip.open("../data/midi.pkl.gz","wb") as f:
         cPickle.dump(res,f)
