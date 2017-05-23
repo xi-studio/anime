@@ -247,9 +247,8 @@ with tf.device('/gpu:0'):
     
                 generate_image(iteration, _data)
     
-            if iteration == ITERS-10:
-                print 'save'
-            #    saver.save(session, '../data/model/yiruma')
+            if iteration % 1000 == 999:
+                saver.save(session, '../data/yiruma_model/yirma_model', global_step=iteration)
             # Write logs every 100 iters
             if (iteration < 5) or (iteration % 100 == 99):
                 lib.plot.flush()

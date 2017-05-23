@@ -17,6 +17,24 @@ size = (16*sc, 40*2)
 
 print 'Pic size',size
 
+def midi2key(filename,tracknum=0):
+    p = midi.read_midifile(filename)
+    events = p[tracknum]
+    result = []
+
+    abs_time = 0
+    for e in events:
+        if isinstance(e,midi.NoteOnEvent):
+            abs_time += e.tick
+            result.append(abs_time)
+        if isinstance(e,midi.NoteOffEvent):
+            abs_time += e.tick
+            result.append(abs_time)
+            
+    if len(result)!=0:
+        print abs_time/len(result)
+
+
 def midi2keystrikes(filename,tracknum=0):
     p = midi.read_midifile(filename)
     events = p[tracknum]
@@ -47,7 +65,7 @@ def midi2keystrikes(filename,tracknum=0):
     return base 
 
 
-def miditomatrix(dataset): 
+def midi2matrix(dataset): 
     files = glob.glob(dataset)
     num = 0
     base = []
@@ -63,15 +81,21 @@ def miditomatrix(dataset):
     return np.array(base)
 
 
+
 if __name__=="__main__":
-    data = miditomatrix('../data/midi_set/*.mid')
-    data = data[:-(data.shape[0]%100)]
-    data = data.astype(np.int8)
-    ta = np.ones(data.shape[0])
-    print data.shape
-    res = (data,ta)
-    with gzip.open("../data/midi.pkl.gz","wb") as f:
-        cPickle.dump(res,f)
+    dataset = '../data/midi_set/*.mid'
+    files = glob.glob(dataset)
+    for f in files:
+        track = midi2key(f)
+
+#    data = midi2matrix('../data/midi_set/*.mid')
+#    data = data[:-(data.shape[0]%100)]
+#    data = data.astype(np.int8)
+#    ta = np.ones(data.shape[0])
+#    print data.shape
+#    res = (data,ta)
+#    with gzip.open("../data/midi.pkl.gz","wb") as f:
+#        cPickle.dump(res,f)
 
     
     

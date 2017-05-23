@@ -13,7 +13,7 @@ def conv2img():
     res = glob.glob('../data/song/*.wav')
     for f in res:
         fs,x = wavfile.read(f)
-        song = x[::4]/bit
+        song = x[::4]/bit 
         idx = int(np.floor(song.shape[0]/rat))
         song = song[:rat*idx]
         song = song.reshape((idx,rat))

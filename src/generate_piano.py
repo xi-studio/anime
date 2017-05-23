@@ -20,10 +20,10 @@ import tflib.piano
 import tflib.plot
 
 from scipy.io import wavfile
-BIT = np.power(2,8)
+BIT = np.power(2,16)
 
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
-DIM = 10 # Model dimensionality
+DIM = 30 # Model dimensionality
 BATCH_SIZE = 10 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
@@ -207,19 +207,15 @@ def inf_train_gen():
         for images,targets in train_gen():
             yield images
 
+fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
+fixed_noise_samples = Generator(128, noise=fixed_noise)
+# Train loop
+sess=tf.Session()    
+saver = tf.train.Saver()
+saver.restore(sess,tf.train.latest_checkpoint('../data/yiruma_model'))
 
-with tf.device('/cpu:0'): 
-    sess=tf.Session()    
-    saver = tf.train.import_meta_graph('../data/model/yiruma.meta')
-    saver.restore(sess,tf.train.latest_checkpoint('../data/model'))
-    sess.run(tf.global_variables_initializer())
+samples = sess.run(fixed_noise_samples)
+res = samples.reshape(128*11025)
+print np.max(res)
+print np.min(res)
 
-    fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
-    fixed_noise_samples = Generator(128, noise=fixed_noise)
-    samples = sess.run(fixed_noise_samples)
-    res = samples.reshape(128*11025)*BIT
-    print np.max(res)
-    print np.min(res)
-    #res = res.astype(np.int16)
-    #wavfile.write('../data/first.wav',11025,res)
-    print res
