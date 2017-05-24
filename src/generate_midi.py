@@ -18,6 +18,7 @@ import tflib.ops.deconv2d
 import tflib.save_images
 import tflib.midi
 import tflib.plot
+from convert_midi import *
 
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 30 # Model dimensionality
@@ -26,7 +27,7 @@ CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 50000 # How many generator iterations to train for 
 #ITERS = 2000 # How many generator iterations to train for 
-OUTPUT_DIM = 84*84 # Number of pixels in MNIST (28*28)
+OUTPUT_DIM = 100*88 # Number of pixels in MNIST (28*28)
 
 lib.print_model_settings(locals().copy())
 
@@ -57,17 +58,17 @@ def Generator(n_samples, noise=None):
     if noise is None:
         noise = tf.random_normal([n_samples, 128])
 
-    output = lib.ops.linear.Linear('Generator.Input', 128, 11*11*4*DIM, noise)
+    output = lib.ops.linear.Linear('Generator.Input', 128, 13*11*4*DIM, noise)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Generator.BN1', [0], output)
     output = tf.nn.relu(output)
-    output = tf.reshape(output, [-1, 4*DIM, 11, 11])
+    output = tf.reshape(output, [-1, 4*DIM, 13, 11])
 
     output = lib.ops.deconv2d.Deconv2D('Generator.2', 4*DIM, 2*DIM, 5, output)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
     output = tf.nn.relu(output)
-    output = output[:,:,:21,:21]
+    output = output[:,:,:25,:]
 
 
     output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
@@ -81,7 +82,7 @@ def Generator(n_samples, noise=None):
     return tf.reshape(output, [-1, OUTPUT_DIM])
 
 def Discriminator(inputs):
-    output = tf.reshape(inputs, [-1, 1, 84, 84])
+    output = tf.reshape(inputs, [-1, 1, 100, 88])
 
     output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
     output = LeakyReLU(output)
@@ -96,8 +97,8 @@ def Discriminator(inputs):
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
     output = LeakyReLU(output)
 
-    output = tf.reshape(output, [-1, 11*11*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 11*11*4*DIM, 1, output)
+    output = tf.reshape(output, [-1, 13*11*4*DIM])
+    output = lib.ops.linear.Linear('Discriminator.Output', 13*11*4*DIM, 1, output)
 
     return tf.reshape(output, [-1])
 
@@ -143,41 +144,21 @@ if MODE == 'wgan-gp':
 
 # Dataset iterator
 
-fixed_noise = tf.constant(np.random.normal(size=(1, 128)).astype('float32'))
-fixed_noise_samples = Generator(10, noise=fixed_noise)
+fixed_noise = tf.constant(np.random.normal(size=(100, 128)).astype('float32'))
+fixed_noise_samples = Generator(100, noise=fixed_noise)
 # Train loop
-sess=tf.Session()    
+sess = tf.Session()
 saver = tf.train.Saver()
 saver.restore(sess,tf.train.latest_checkpoint('../data/model'))
 
-import time
-import midi
+samples = sess.run(fixed_noise_samples)
+samples = np.round(samples)
+samples[np.where(samples>0)] = 105
+res = samples.reshape((20,500,88))
+from scipy.misc import imsave
+for num,im in enumerate(res):
+    imsave('../data/midi_img/output%s.png' % num, im)
+    new_pm = piano_roll_to_pretty_midi(im.T)
+    new_pm.write('../data/midi_img/output%s.mid' % num)
+    
 
-with tf.device('/cpu:0'): 
-    samples = sess.run(fixed_noise_samples)
-res = samples.reshape(-1,84)
-pattern = midi.Pattern()
-track = midi.Track()
-for x in res:
-    onoff = np.argmax(x[:2])
-    pitch = np.argmax(x[2:2+37])
-    velocity = np.argmax(x[2+37:2+37+11])
-    tick = np.argmax(x[2+37+11:])
-
-    tick = int(960/16.0 * tick)
-    pitch = int(127/36.0 * pitch)
-    if velocity==0:
-        velocity = int(127/10.0 * velocity) 
-        on = midi.NoteOnEvent(tick=tick, velocity=velocity, pitch=pitch)
-        track.append(on)
-    else:
-        off = midi.NoteOffEvent(tick=tick, velocity=0, pitch=pitch)
-        track.append(off)
-eot = midi.EndOfTrackEvent(tick=1)
-track.append(eot)
-print track
-midi.write_midifile("example.mid", pattern)
-print res.shape
-
-
-print samples
