@@ -1,88 +1,45 @@
-from __future__ import division
-import midi
+import pretty_midi
 import numpy as np
 import cPickle
 import gzip
 import glob
 
 import matplotlib.pyplot as plt
+from scipy.misc import imsave
 
+fs = 10
+note = (21,109)
 
-pic_size = 2+37+11+34
-print 'Pic size',pic_size
-
-def note2array(onoff,pitch,velocity,tick):
-    if tick > 960*2:
-        tick = 960*2
-    
-    pitch = np.round(pitch / (127.0 / 36))
-    velocity = np.round(velocity / (127.0 / 10))
-    tick = np.round(tick / (960.0 / 16))
-    
-    pic = np.zeros(pic_size)
-    pic[int(onoff)]   = 1
-    pic[int(2+pitch)] = 1
-    pic[int(2+36+velocity)] = 1
-    pic[int(2+36+10+tick)]  = 1
-
-    return pic 
-
-def midi2key(filename,tracknum=0):
-    p = midi.read_midifile(filename)
-    events = p[tracknum]
-    result = []
-
-    for e in events:
-        if isinstance(e,midi.NoteOnEvent):
-            result.append(note2array(1,e.pitch,e.velocity,e.tick))
-        if isinstance(e,midi.NoteOffEvent):
-            result.append(note2array(0,e.pitch,e.velocity,e.tick))
-            
-
-
-
-def midi2matrix(dataset): 
+def midi2pianoroll(dataset): 
     files = glob.glob(dataset)
     num = 0
-    result = []
+    l = []
     for f in files:
-        p = midi.read_midifile(f)
-        events = p[0]
+        filename = f.replace('.mid','.png')
+        pm = pretty_midi.PrettyMIDI(f)
+        res = pm.get_piano_roll(fs=fs)
+        data = res[21:109,:]
+        data = data.T
+        for x in range(data.shape[0]-100):
+            l.append(data[x:x+100].reshape(-1))
 
-        for e in events:
-            if isinstance(e,midi.NoteOnEvent):
-                result.append(note2array(0,e.pitch,e.velocity,e.tick))
-            if isinstance(e,midi.NoteOffEvent):
-                result.append(note2array(0,e.pitch,e.velocity,e.tick))
-
-    
-        num = num + 1
-       
-    print num
-    print len(result)
-    return np.array(result)
-
+        print f
+    idx = np.arange(len(l))
+    l = np.array(l)
+    res = l[:10000]
+    print l.shape
+    print l.dtype
+   
+    return res
 
 
 if __name__=="__main__":
-
-    data = midi2matrix('../data/midi_set/*.mid')
-    size  = 6000
-    idx = np.arange(data.shape[0]-84)
-    np.random.shuffle(idx)
-    idx = idx[:size]
-    res = []
-    for x in idx:
-        res.append(data[x:x+84,:].reshape(84*84))
-       
-    res = np.array(res)
-     
-    data = res.astype(np.int8)
-    ta = np.ones(data.shape[0])
-    print data.shape
-    res = (data,ta)
-    with gzip.open("../data/midi.pkl.gz","wb") as f:
+    data = midi2pianoroll('../data/midi_set/*.mid')
+    data = data.astype(np.int8)
+    res = (data,np.ones(data.shape[0]))
+    with gzip.open("../data/midi.pkl.gz",'wb') as f:
         cPickle.dump(res,f)
+    
 
    
    

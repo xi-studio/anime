@@ -7,6 +7,7 @@ import cPickle as pickle
 
 def mnist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data
+    images = images/127.0 
 
     rng_state = numpy.random.get_state()
     numpy.random.shuffle(images)
@@ -30,7 +31,7 @@ def mnist_generator(data, batch_size, n_labelled, limit=None):
             numpy.random.set_state(rng_state)
             numpy.random.shuffle(labelled)
 
-        image_batches = images.reshape(-1, batch_size, 84*84)
+        image_batches = images.reshape(-1, batch_size, 100*88)
         target_batches = targets.reshape(-1, batch_size)
 
         if n_labelled is not None:

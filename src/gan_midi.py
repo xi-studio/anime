@@ -24,8 +24,8 @@ DIM = 30 # Model dimensionality
 BATCH_SIZE = 10 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
-ITERS = 200000 # How many generator iterations to train for 
-OUTPUT_DIM = 84*84 # Number of pixels in MNIST (28*28)
+ITERS = 50000 # How many generator iterations to train for 
+OUTPUT_DIM = 100*88 # Number of pixels in MNIST (28*28)
 
 lib.print_model_settings(locals().copy())
 
@@ -56,17 +56,17 @@ def Generator(n_samples, noise=None):
     if noise is None:
         noise = tf.random_normal([n_samples, 128])
 
-    output = lib.ops.linear.Linear('Generator.Input', 128, 11*11*4*DIM, noise)
+    output = lib.ops.linear.Linear('Generator.Input', 128, 13*11*4*DIM, noise)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Generator.BN1', [0], output)
     output = tf.nn.relu(output)
-    output = tf.reshape(output, [-1, 4*DIM, 11, 11])
+    output = tf.reshape(output, [-1, 4*DIM, 13, 11])
 
     output = lib.ops.deconv2d.Deconv2D('Generator.2', 4*DIM, 2*DIM, 5, output)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
     output = tf.nn.relu(output)
-    output = output[:,:,:21,:21]
+    output = output[:,:,:25,:]
 
 
     output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
@@ -80,7 +80,7 @@ def Generator(n_samples, noise=None):
     return tf.reshape(output, [-1, OUTPUT_DIM])
 
 def Discriminator(inputs):
-    output = tf.reshape(inputs, [-1, 1, 84, 84])
+    output = tf.reshape(inputs, [-1, 1, 100, 88])
 
     output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
     output = LeakyReLU(output)
@@ -95,8 +95,8 @@ def Discriminator(inputs):
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
     output = LeakyReLU(output)
 
-    output = tf.reshape(output, [-1, 11*11*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 11*11*4*DIM, 1, output)
+    output = tf.reshape(output, [-1, 13*11*4*DIM])
+    output = lib.ops.linear.Linear('Discriminator.Output', 13*11*4*DIM, 1, output)
 
     return tf.reshape(output, [-1])
 
@@ -193,7 +193,7 @@ fixed_noise_samples = Generator(20, noise=fixed_noise)
 def generate_image(frame, true_dist):
     samples = session.run(fixed_noise_samples)
     lib.save_images.save_images(
-        samples.reshape((20, 84, 84)),
+        samples.reshape((20, 100, 88)),
         '../data/midi_img/samples_{}.png'.format(frame)
     )
 
