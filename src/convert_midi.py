@@ -7,95 +7,82 @@ import glob
 
 import matplotlib.pyplot as plt
 
-tmp = 960    # ticks per beat
-ts  = tmp/16 # time scale
-ps  = 3      # picth scale
-sc  = 5     # 10 seconds
 
-size = (16*sc, 40*2)
-#size = (16*sc, (127//ps)*2)
+pic_size = 2+37+11+34
+print 'Pic size',pic_size
 
-print 'Pic size',size
+def note2array(onoff,pitch,velocity,tick):
+    if tick > 960*2:
+        tick = 960*2
+    
+    pitch = np.round(pitch / (127.0 / 36))
+    velocity = np.round(velocity / (127.0 / 10))
+    tick = np.round(tick / (960.0 / 16))
+    
+    pic = np.zeros(pic_size)
+    pic[int(onoff)]   = 1
+    pic[int(2+pitch)] = 1
+    pic[int(2+36+velocity)] = 1
+    pic[int(2+36+10+tick)]  = 1
+
+    return pic 
 
 def midi2key(filename,tracknum=0):
     p = midi.read_midifile(filename)
     events = p[tracknum]
     result = []
 
-    abs_time = 0
     for e in events:
         if isinstance(e,midi.NoteOnEvent):
-            abs_time += e.tick
-            result.append(abs_time)
+            result.append(note2array(1,e.pitch,e.velocity,e.tick))
         if isinstance(e,midi.NoteOffEvent):
-            abs_time += e.tick
-            result.append(abs_time)
+            result.append(note2array(0,e.pitch,e.velocity,e.tick))
             
-    if len(result)!=0:
-        print abs_time/len(result)
 
-
-def midi2keystrikes(filename,tracknum=0):
-    p = midi.read_midifile(filename)
-    events = p[tracknum]
-    result = []
-
-    abs_time = 0
-    for e in events:
-        if isinstance(e,midi.NoteOnEvent):
-            if e.pitch >120:
-                e.pitch = 120
-            abs_time = abs_time + e.tick
-            res = [int(abs_time / ts), (e.pitch // ps) * 2 + 1]
-            result.append(res)
-        if isinstance(e,midi.NoteOffEvent):
-            abs_time = abs_time + e.tick
-            res = [int(abs_time / ts), (e.pitch // ps) * 2]
-            result.append(res)
-            
-    if (len(result) == 0) and (tracknum <5):
-        return midi2keystrikes(filename,tracknum+1)
-
-    timesize = result[-1][0]    
-    timesize = np.ceil(timesize / (16*sc)) * 16 *sc
-    base = np.zeros((int(timesize),40*2))
-    idx = np.array(result)   
-    base[idx[:,0],idx[:,1]] = 1
-    base = base.reshape((-1,80*40*2))
-    return base 
 
 
 def midi2matrix(dataset): 
     files = glob.glob(dataset)
     num = 0
-    base = []
+    result = []
     for f in files:
-        track = midi2keystrikes(f)
+        p = midi.read_midifile(f)
+        events = p[0]
 
-        for x in track:
-            base.append(x)
+        for e in events:
+            if isinstance(e,midi.NoteOnEvent):
+                result.append(note2array(0,e.pitch,e.velocity,e.tick))
+            if isinstance(e,midi.NoteOffEvent):
+                result.append(note2array(0,e.pitch,e.velocity,e.tick))
+
     
         num = num + 1
        
     print num
-    return np.array(base)
+    print len(result)
+    return np.array(result)
 
 
 
 if __name__=="__main__":
-    dataset = '../data/midi_set/*.mid'
-    files = glob.glob(dataset)
-    for f in files:
-        track = midi2key(f)
 
-#    data = midi2matrix('../data/midi_set/*.mid')
-#    data = data[:-(data.shape[0]%100)]
-#    data = data.astype(np.int8)
-#    ta = np.ones(data.shape[0])
-#    print data.shape
-#    res = (data,ta)
-#    with gzip.open("../data/midi.pkl.gz","wb") as f:
-#        cPickle.dump(res,f)
+    data = midi2matrix('../data/midi_set/*.mid')
+    size  = 6000
+    idx = np.arange(data.shape[0]-84)
+    np.random.shuffle(idx)
+    idx = idx[:size]
+    res = []
+    for x in idx:
+        res.append(data[x:x+84,:].reshape(84*84))
+       
+    res = np.array(res)
+     
+    data = res.astype(np.int8)
+    ta = np.ones(data.shape[0])
+    print data.shape
+    res = (data,ta)
+    with gzip.open("../data/midi.pkl.gz","wb") as f:
+        cPickle.dump(res,f)
 
-    
-    
+   
+   

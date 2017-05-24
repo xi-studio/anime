@@ -30,7 +30,7 @@ def mnist_generator(data, batch_size, n_labelled, limit=None):
             numpy.random.set_state(rng_state)
             numpy.random.shuffle(labelled)
 
-        image_batches = images.reshape(-1, batch_size, 80*80)
+        image_batches = images.reshape(-1, batch_size, 84*84)
         target_batches = targets.reshape(-1, batch_size)
 
         if n_labelled is not None:
