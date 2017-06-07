@@ -7,13 +7,17 @@ from sklearn.preprocessing import normalize
 from profilehooks import profile
 import matplotlib.pyplot as plt
 
-class sfnn_layer(input, n_in, n_out):
-    self.w = np.random.uniform(0,1,(784,50))
-    self.n = np.ones(n_out)
-    self.bmin = np.zeros(n_out)
-    self.bmax = np.ones(n_out) * 3
-    self.lr = np.ones(n_out) * 0.01
-    self.grad = np.ones(n_out) * -1
+class w_layer(object):
+    def __init__(self, input, n_in, n_out):
+        self.w = np.random.uniform(0,1,(n_in,n_out))
+
+class sfnn_layer(object):
+    def __init__(self, num):
+        self.v = np.zeros(num)
+        self.b = np.zeros(num)
+        self.g = np.ones(num)
+        self.lr = 0.1
+        
     
 
 
