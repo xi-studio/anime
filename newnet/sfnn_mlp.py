@@ -36,20 +36,33 @@ if __name__ =='__main__':
 
     g = np.ones(10)
 
+   
+    x = np.random.uniform(0,1,784)
+    y = np.zeros(10)
+    y[1] = 1
 
-    for iter in range(100):
-        epo_sum = 0
-        for num,x in enumerate(x_data):
-            res = np.dot(x,w)
-       	    res = res*(res>=0) 
-            w = w -  0.01*x[:,None] * w * (res>0) * g 
-	   # w = w*(w>0)
-            g = res - y_data[num]
-           # w = normalize(w, norm='l1', axis=1)
-            epo_sum += np.sum(np.abs(g))
-	print epo_sum
-    
+    print x
+    for iter in range(1): 
+        res = np.dot(x,w)
+	res = res*(res>=0)
+	w = w -  0.01*x[:,None] * w * (res>0) * g
+	g = res - y 
+	print g
+    #    print g
 
+#    for iter in range(100):
+#        epo_sum = 0
+#        for num,x in enumerate(x_data):
+#            res = np.dot(x,w)
+#       	    res = res*(res>=0) 
+#            w = w -  0.01*x[:,None] * w * (res>0) * g 
+#	   # w = w*(w>0)
+#            g = res - y_data[num]
+#           # w = normalize(w, norm='l1', axis=1)
+#            epo_sum += np.sum(np.abs(g))
+#	print epo_sum
+#    
+#
 
 
     
