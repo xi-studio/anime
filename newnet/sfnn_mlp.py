@@ -7,17 +7,6 @@ from sklearn.preprocessing import normalize
 from profilehooks import profile
 import matplotlib.pyplot as plt
 
-class w_layer(object):
-    def __init__(self, input, n_in, n_out):
-        self.w = np.random.uniform(0,1,(n_in,n_out))
-
-class sfnn_layer(object):
-    def __init__(self, num):
-        self.v = np.zeros(num)
-        self.b = np.zeros(num)
-        self.g = np.ones(num)
-        self.lr = 0.1
-        
 
 def load_data():
     filepath = '../data/mnist.pkl.gz'
@@ -32,37 +21,23 @@ if __name__ =='__main__':
     y_data[np.arange(500),idy] = 1
 
     w = np.random.uniform(0,1,(784,10))
-    w = normalize(w, norm='l1', axis=1)
-
     g = np.ones(10)
+    b = np.zeros(10)
 
-   
-    x = np.random.uniform(0,1,784)
-    y = np.zeros(10)
-    y[1] = 1
+    for iter in range(100):
+        epo_sum = 0
+        for num,x in enumerate(x_data):
+            res = np.dot(x,w) + b
+       	    res = res * (res>=0) 
+            w  = w - 0.001 * x[:,None] *(res>0) * g #- np.sign(w)*0.0001
+	    b  = b - 0.001 * g * (res>0)
+            g  = res - y_data[num]
+	    #print np.sum(np.abs(g))
+            epo_sum += np.sum(np.abs(g))
+	#print np.sum(np.abs(w))
+        print epo_sum
+    
 
-    print x
-    for iter in range(1): 
-        res = np.dot(x,w)
-	res = res*(res>=0)
-	w = w -  0.01*x[:,None] * w * (res>0) * g
-	g = res - y 
-	print g
-    #    print g
-
-#    for iter in range(100):
-#        epo_sum = 0
-#        for num,x in enumerate(x_data):
-#            res = np.dot(x,w)
-#       	    res = res*(res>=0) 
-#            w = w -  0.01*x[:,None] * w * (res>0) * g 
-#	   # w = w*(w>0)
-#            g = res - y_data[num]
-#           # w = normalize(w, norm='l1', axis=1)
-#            epo_sum += np.sum(np.abs(g))
-#	print epo_sum
-#    
-#
 
 
     
