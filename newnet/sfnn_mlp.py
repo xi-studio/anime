@@ -7,6 +7,9 @@ from sklearn.preprocessing import normalize
 from profilehooks import profile
 import matplotlib.pyplot as plt
 
+import thano
+import theano.tensor as T
+
 
 def load_data():
     filepath = '../data/mnist.pkl.gz'
