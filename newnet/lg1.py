@@ -9,7 +9,7 @@ feats=784
 # D[0]:generate rand numbers of size N,element between (0,1)
 # D[1]:generate rand int number of size N,0 or 1
 D=(rng.randn(N,feats),rng.randint(size=N,low=0,high=2))
-training_steps=10000
+training_steps=1000
 
 # declare symbolic variables
 x=T.matrix('x')
