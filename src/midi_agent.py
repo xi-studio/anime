@@ -68,8 +68,12 @@ def piano_roll_to_pretty_midi(piano_roll, fs=100, program=0):
 
 
 if __name__ == "__main__":
-     res = np.random.randint(low=0,high=127,size=(128,500))
-     pm = piano_roll_to_pretty_midi(res,fs=10)
+    res = np.random.randint(low=0,high=2,size=(128,500))
+    res = res * 100
+    plt.imshow(res)
+    plt.show()
+    pm = piano_roll_to_pretty_midi(res,fs=10)
+    pm.write("../data/test_midi/test_random.midi")
 
 
 
