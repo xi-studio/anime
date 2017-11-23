@@ -1,9 +1,7 @@
 import pretty_midi
+import glob
+import os
 import numpy as np
-
-path = '../data/jiao.mid'
-
-pm = pretty_midi.PrettyMIDI(path)
 
 
 def pm2matrix(pm):
@@ -12,19 +10,17 @@ def pm2matrix(pm):
         for note in ins.notes:
             l.append((note.start, note.end, note.pitch, note.velocity, i)) 
     data = np.array(l,dtype = [('start', float), ('end', float), ('pitch', float),('velocity',float),('channel',float)])
-    print data
     
     data = np.sort(data,order='start')
-
     
-    base = np.zeros((len(l),5))
-    base[:,0][1:] = data['start'][1:] - data['start'][:-1]
-    base[:,1]     = data['end'] - data['start']
-    base[:,2]     = data['pitch'] /128.0
-    base[:,3]     = data['velocity'] /128.0
-    base[:,4]     = data['channel']
+    matrix = np.zeros((len(l),5))
+    matrix[:,0][1:] = data['start'][1:] - data['start'][:-1]
+    matrix[:,1]     = data['end'] - data['start']
+    matrix[:,2]     = data['pitch'] /128.0
+    matrix[:,3]     = data['velocity'] /128.0
+    matrix[:,4]     = data['channel']
 
-    return base
+    return matrix
 
 def matrix2pm(matrix):
     tick = 0
@@ -33,21 +29,47 @@ def matrix2pm(matrix):
         tick += note[0]
 	start = tick
 	end   = tick + note[1]
-	pitch = np.floor(note[2] * 128)
-	velocity = np.floor(note[3] * 128)
-	channel = note[4]
+	pitch = int(np.floor(note[2] * 128))
+	velocity = int(np.floor(note[3] * 128))
+	channel = int(note[4])
 
 	l.append((start,end,pitch,velocity,channel))
     
-    data = np.array(l,dtype = [('start', float), ('end', float), ('pitch', float),('velocity',float),('channel',float)])
+    data = np.array(l,dtype = [('start', float), ('end', float), ('pitch', int),('velocity',int),('channel',int)])
     data = np.sort(data,order='end')
 
-    print data
-         
+    cMax = int(np.max(data['channel'])) + 1
+
+    pm = pretty_midi.PrettyMIDI()
+
+    for c in range(cMax):
+        instrument = pretty_midi.Instrument(program=0)
+	for note in data:
+	    if note['channel'] == c:
+                pm_note = pretty_midi.Note(
+                            velocity=note['velocity'],
+                            pitch=note['pitch'],
+                            start=note['start'],
+                            end=note['end'])
+		instrument.notes.append(pm_note)
+        pm.instruments.append(instrument)
+
+    return pm
+
+def getList():
+    res = glob.glob("../data/piano/*/*/*/*.mid")
+    for path in res:
+	try:
+            pm = pretty_midi.PrettyMIDI(path)
+	    print path
+	    print pm.instruments
+	except Exception as e:
+	    pass
+    
 
 if __name__ == '__main__':
-    r =  pm2matrix(pm)
-    matrix2pm(r)        
+    getList()
+
 
 
 
