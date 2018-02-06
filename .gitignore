@@ -20,3 +20,5 @@ html
 *~
 *.swp
 *.DS_Store
+music/res
+music/checkpoints
